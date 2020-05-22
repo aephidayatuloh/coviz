@@ -178,8 +178,8 @@ ggplot(data = world_covid, mapping = aes(x = population/10^6, y = total_cases/10
 # Buble chart custom legend
 ggplot(data = world_covid, mapping = aes(x = population/10^6, y = total_cases/10^3, size = round(fatality_rate*100, 2))) + 
   geom_point(alpha = 0.3, color = "coral") +
-  scale_x_continuous(labels = scales::number_format(), limits = c(0, 300)) +
-  scale_y_continuous(labels = scales::number_format(), limits = c(0, 350)) +
+  scale_x_continuous(labels = scales::number_format()) +
+  scale_y_continuous(labels = scales::number_format()) +
   labs(title = "Population vs Total Cases",
        x = "Population (millions)",
        y = "Total Cases (thousands)",
