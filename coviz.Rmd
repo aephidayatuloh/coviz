@@ -1,0 +1,682 @@
+---
+title: "Visualisasi Data Menggunakan R"
+subtitle: "Webinar Data Club 02 Juni 2020 (Studi Kasus Covid19)"
+author: "Aep Hidayatuloh"
+date: "Last Update: `r format(Sys.Date(), '%d %B %Y')`"
+output: 
+  html_notebook:
+    number_sections: no
+    theme: spacelab
+    df_print: paged
+    toc: true
+    toc_depth: 2
+    toc_float: true
+---
+
+<style type="text/css">
+
+body{ /* Normal  */
+      font-size: 14px;
+  }
+td {  /* Table  */
+  font-size: 12px;
+}
+h1.title {
+  font-size: 38px;
+  color: lightblue;
+  font-weight: bold;
+}
+h1 { /* Header 1 */
+  font-size: 24px;
+  color: DarkBlue;
+}
+h2 { /* Header 2 */
+  font-size: 20px;
+  color: DarkBlue;
+}
+h3 { /* Header 3 */
+  font-size: 16px;
+#  font-family: "Times New Roman", Times, serif;
+  color: DarkBlue;
+}
+h4 { /* Header 4 */
+  font-size: 14px;
+  color: DarkBlue;
+}
+code.r{ /* Code block */
+    font-size: 12px;
+}
+pre { /* Code block - determines code spacing between lines */
+    font-size: 12px;
+}
+</style>
+
+
+```{r setup, include=FALSE}
+#knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+	echo = TRUE, 
+	fig.align = "center",
+	fig.show = "hold",
+	message = FALSE,
+	warning = FALSE,
+	results = "hold"
+)
+ 
+options(scipen = 99)
+```
+
+# Objektif
+
+Menampilkan data menggunakan R untuk memperoleh informasi yang dibutuhkan. Pada kesempatan ini akan dibahas membuat visualisasi menggunakan data kasus Covid19 di berbagai negara dan juga Indonesia. Package yang akan digunakan adalah [ggplot2](https://ggplot2.tidyverse.org/). 
+
+# Data & Script
+
+Beberapa hal yang dibutuhkan pada kesempatan ini :
+
+**Program R dan RStudio**, diharapkan minimal R dengan versi 3.6.2 dan beberapa package yang dibutuhkan.
+
+Anda dapat memperoleh materi workshop ini (data, script dan file Rmd) di repository <https://github.com/aephidayatuloh/coviz>.  
+
+* Pilih **Clone or download**  
+* Kemudian pilih **Download ZIP**.  
+* Setelah selesai download, ekstrak file zip tersebut dan _double-click_ file `coviz.Rproj`.
+
+Atau Anda juga dapat mengakses project tersebut yang sudah tersedia di RStudio Cloud <https://rstudio.cloud/project/1333221>. Anda perlu login atau membuat akun terlebih dahulu jika belum mempunyai akun RStudio Cloud. Semua materi dan package yang akan digunakan sudah tersedia.
+
+Jika Anda ingin memperbarui data yang sudah disediakan, Anda dapat membuka dan menjalankan script pada file "get_raw_data.R" di dalam folder script. Tentu saja Anda perlu install terlebih dahulu package yang digunakan jika Anda belum mempunyai package tersebut pada library R Anda.
+
+Package tambahan yang dibutuhkan untuk membuat visualisasi pada kesempatan ini adalah {dplyr}, {ggplot2} dan {scales}. Jika Anda belum menginstall package tersebut, silahkan jalankan perintah berikut.
+
+```{r eval=FALSE}
+install.packages(c("dplyr", "ggplot2", "scales"))
+```
+
+Selanjutnya kita dapat menggunakan package tersebut dengan menjalankan 
+
+```{r pkg}
+library(dplyr)
+library(ggplot2)
+library(scales)
+```
+
+Pertama, kita siapkan data yang akan digunakan dengan cara import data dari file CSV yang sudah disediakan di folder `data`. Ada 2 file yang akan digunakan, yaitu `world_covid.csv` dan `dailynational.csv`. Import data tersebut menjadi dataframe bernama `world_covid` menggunakan fungsi `read.csv()` dengan argument `file = ` adalah lokasi dan nama file CSV yang akan diimport, `header = TRUE` karena baris pertama adalah nama kolom, dan `stringsAsFactors = FALSE` agar semua kolom bertipe character di file CSV diimport sebagai character, bukan sebagai factor. Untuk lebih jelas tentang factor Anda bisa membaca [dokumentasi factor](https://www.rdocumentation.org/packages/base/versions/3.6.2/topics/factor). 
+
+Kemudian kita lihat struktur dari dataframe (banyaknya observasi dan variable, nama variable dan tipenya) yang sudah diimport dengan fungsi `str()`. Data `world_covid` adalah data mengenai banyaknya kasus covid di setiap negara/negara bagian dan populasi penduduknya yang diambil dari <https://www.worldometers.info/coronavirus> dan <https://www.worldometers.info/world-population>.
+
+```{r}
+world_covid <- read.csv(file = "data/world_covid.csv", header = TRUE, stringsAsFactors = FALSE)
+str(world_covid)
+```
+
+Berikutnya kita lihat beberapa baris pertama dari data `world_covid`. Menggunakan fungsi `head()` untuk menampilkan beberapa baris pertama. Dengan `n = 10` artinya menapilkan 10 baris pertama dari data `world_covid`. 
+
+```{r}
+head(world_covid, n = 10)
+```
+
+
+
+# Top Fatality Rate Country
+
+Dengan visualisasi yang pertama ini, kita akan menjawab pertanyaan "Negara apa saja yang memiliki _Fatality Rate_ tertinggi?" dengan chart seperti berikut.
+
+```{r echo=FALSE}
+world_covid %>% 
+  arrange(desc(fatality_rate)) %>%
+  head(n = 20) %>% 
+  ggplot(mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity", fill = "coral", alpha = 0.7) +
+  geom_text(aes(label = paste0(fatality_rate*100, "%")), size = 3, hjust = -0.1) + 
+  coord_flip() + 
+  labs(title = "Top Fatality Rate Countries",
+       x = "Country",
+       y = "Fatality Rate") +
+  theme_minimal() + 
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0, 0.25)) +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+Untuk menghasilkan visualisasi seperti di atas kita akan menggunakan data `world_covid` dengan `country` dan `fatality_rate` sebagai variable untuk membuat visualisasi berupa barchart. Data yang digunakan adalah seperti berikut.
+
+```{r}
+vis1 <- world_covid %>% 
+  select(country, fatality_rate)
+vis1
+```
+
+
+```{r}
+ggplot(data = vis1, mapping = aes(x = country, y = fatality_rate)) + 
+  geom_bar(stat = "identity")
+```
+
+Sulit untuk memperoleh informasi yang baik dari hasil visualisasi di atas. Kita akan coba untuk membuat label nama negara-negara lebih terlihat dengan merubah posisi label nama negara miring 90 derajat.
+
+```{r}
+# rotate x-axis label 90 deg
+ggplot(data = vis1, mapping = aes(x = country, y = fatality_rate)) + 
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+
+Ternyata masih belum cukup terlihat dan kita belum bisa mendapatkan informasi apapun dari chart tersebut.
+
+Kita akan coba untuk mengurutkan nama-nama negara berdasarkan _Fatality Rate_, yaitu variable `fatality_rate`. Kita gunakan fungsi `reorder(country, fatality_rate)` untuk mengurutkan barchart berdasarkan _Fatality Rate_.
+
+```{r}
+# sorted barchart
+ggplot(data = vis1, mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x = element_text(angle = 90))
+
+```
+
+
+Agar informasi dapat diperoleh dengan baik maka tidak semua negara akan kita tampilkan. Misalnya kita hanya perlu menampilkan daftar 20 negara berdasarkan _Fatality Rate_ tertinggi. Dengan fungsi `arrange()` dan `desc()` dari package {dplyr} dan fungsi `head()` dengan `n = 20` kita akan mendapatkan 20 negara dengan _Fatality Rate_ tertinggi.
+
+```{r}
+topn <- vis1 %>% 
+  arrange(desc(fatality_rate)) %>%
+  head(n = 20)
+topn
+```
+
+Selanjutnya dari data tersebut kita buat visualisasinya. 
+```{r}
+# sorted barchart
+ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x = element_text(angle = 90))
+
+```
+
+Kita sudah dapat menampilkan 20 negara dengan _Fatality Rate_ tertinggi. Namun tentu saja untuk publikasi ataupun dari segi estetika masih perlu ditambahkan beberapa "aksesoris".
+
+Selanjutnya kita akan menambahkan judul chart dan merubah judul pada masing-masing sumbu x dan y. Kita dapat menambahkan judul chart dan masing-masing sumbu, kita dapat menggunakan fungsi `labs()`. Argumen `title = ` untuk judul utama, `x = ` untuk judul pada sumbu x, dan `y = ` untuk judul sumbu y. Untuk judul sumbu, tetap mengikuti pada `aes()`. Karena
+
+```{r}
+ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Top Fatality Rate Countries",
+       x = "Country",
+       y = "Fatality Rate")
+```
+
+Nilai _Fatality Rate_ akan lebih mudah dimengerti jika ditampilkan dalam format persentase. Karena variable _Fatality Rate_ ada pada sumbu y dan merupakan variable kontinu, maka kita dapat gunakan fungsi `scale_y_continuous()` dari {ggplot2}. Pada argumen `label = ` kita gunakan fungsi `percent_format()` dari package {scales} agar tampilan label di sumbu _Fatality Rate_ berupa persentase. Argumen `accuracy = 1` pada fungsi `percent_format()` menandakan tidak ada angka dibelakang desimal. 
+
+```{r}
+# Custom axis scale 
+ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Top Fatality Rate Countries",
+       x = "Country",
+       y = "Fatality Rate") + 
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```
+
+Jika Anda ingin format persentase dengan satu angka di belakang desimal, gunakan `accuracy = 0.1`. Jika ingin dua angka di belakang desimal maka `accuracy = 0.01`, dan seterusnya.
+
+Saya pribadi lebih suka ketika membuat visualisasi seperti pada kasus ini, barchart dengan label yang cukup panjang, membuatnya menjadi barchart horizontal. Karena orang awam pun akan dengan mudah mendapatkan informasi yang ingin kita sampaikan melalui visualisasi tersebut. Untuk membuat barchart horizontal, kita dapat digunakan fungsi `coord_flip()` dari package {ggplot2}. Fungsi ini akan mentransformasi sumbu-x (horizontal) menjadi sumbu-y (vertikal), dan sebaliknya.
+
+Coba perhatikan bar negara Yaman. Pada chart sebelumnya bar negara Yaman berada pada ujung kanan sumbu-x. Dengan fungsi `coord_flip()` menjadi di ujung atas sumbu-y. Artinya `coord_flip()` mentransformasi dengan titik pojok kiri bawah sebagai titik tumpunya.
+
+```{r}
+# Custom title - axis title
+ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity") + 
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title = "Top Fatality Rate Countries",
+       x = "Country",
+       y = "Fatality Rate") + 
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  coord_flip()
+```
+
+Tampilan label pada sumbu _Fatality Rate_ harusnya tetap horizontal. Maka kita tidak perlu menggunakan `theme(axis.text.x = element_text(angle = 90))` lagi.
+
+```{r}
+# Custom title - axis title
+ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity") + 
+  labs(title = "Top Fatality Rate Countries",
+       x = "Country",
+       y = "Fatality Rate") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  coord_flip()
+```
+
+
+Kita dapat mengatur sebuah theme dari ggplot2 agar dapat digunakan pada chart ggplot yang kita hasilkan berikutnya tanpa harus menuliskan `+ theme_minimal()` di setiap script dengan `theme_set(theme_minimal())`. Namun pada kesempatan ini di setiap script yang menghasilkan chart dari ggplot2 akan dituliskan `+ theme_minimal()`. 
+
+```{r}
+# Custom theme 
+ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity") + 
+  labs(title = "Top Fatality Rate Countries",
+       x = "Country",
+       y = "Fatality Rate") + 
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  coord_flip() +
+  theme_minimal()
+
+```
+
+
+Langkah berikutnya kita akan merubah warna bar dan grid dari chart tersebut. 
+
+Pertama kita rubah warna bar terlebih dahulu. Warna bar bisa kita rubah dengan menambahkan argumen `fill = `. Disini saya pribadi menggunakan warna `"coral"` dengan `alpha = 0.7`. Nilai `alpha` ini adalah tingkat transparansi warna atau _opacity_, antara 0 dan 1. Anda bisa memilih menggunakan warna lain seperti `"red"`, `"yellow"`, `"green"`, `"skyblue"` dan lain-lain. Bisa juga menggunakan kode warna Hex (misalnya `#E1404B`) atau RGB (misalnya `rgb(225, 64, 75, maxColorValue = 255)`). Saya pribadi sering menggunakan <a href="https://www.google.com/search?q=color+picker" target="_blank">color picker dari google search</a> untuk memilih warna yang ingin digunakan.
+
+```{r}
+# Change color & grid
+ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity", fill = "coral", alpha = 0.7) +
+  labs(title = "Top Fatality Rate Countries",
+       x = "Country",
+       y = "Fatality Rate") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) + 
+  coord_flip() + 
+  theme_minimal() 
+```
+
+Selanjutnya kita hilangkan garis major dan minor horizontal dari sumbu y dan garis minor vertikal dari sumbu x. Kita dapat melakukan ini dengan menggunakan fungsi `theme()` dari {ggplot2}. Argumen yang digunakan adalah `panel.grid.major.y = `, `panel.grid.minor.y = ` dan `panel.grid.major.x = `. Fungsi `element_blank()` untuk setiap argumen tersebut menandakan atribut yang bersesuaian dengan argumen yang digunakan ditiadakan.
+
+```{r}
+# Change color & grid
+ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity", fill = "coral", alpha = 0.7) +
+  labs(title = "Top Fatality Rate Countries",
+       x = "Country",
+       y = "Fatality Rate") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) + 
+  coord_flip() + 
+  theme_minimal() +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+Kita sudah membuat chart yang cukup baik. Namun saya ingin menambahkan nilai _Fatality Rate_ di setiap ujung bar agar informasi yang disampaikan lebih lengkap. Kita dapat gunakan fungsi `geom_text()` atau `geom_label()`, tinggal disesuaikan dengan selera masing-masing. Karena nilai dari variable `fatality_rate` antara 0 dan 1, maka perlu dikalikan 100 untuk mendapatkan nilai persentase sebagai _text_ kemudian ditambahkan tanda "%" dengan fungsi `paste0()`. Untuk menyesuaikan ukuran _text_-nya kita gunakan argumen `size = `. Semakin besar nilai `size = ` maka semakin besar juga ukuran _text_. Argumen `hjust = -0.1` untuk mengatur posisi secara horizontal. 
+
+```{r}
+# Add label & y-limit 
+ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity", fill = "coral", alpha = 0.7) + 
+  labs(title = "Top Fatality Rate Countries",
+       x = "Country",
+       y = "Fatality Rate") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  coord_flip() +
+  theme_minimal() + 
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank()) + 
+  geom_text(aes(label = paste0(fatality_rate*100, "%")), size = 3, hjust = -0.1)
+
+```
+
+Seperti yang dilihat, ada _text_ yang terpotong karena sumbu _Fatality Rate_ yang kurang panjang. Kita dapat mengatur batas (limits) dari sumbu _Fatality Rate_ ini dengan menambahkan argumen `limits = c(<min>, <max>)` pada fungsi `scale_y_continuous()`. Nilai `<min>` dan `<max>` adalah pangkal dan batas ujung sumbu. Karena nilai `fatality_rate` antara 0 dan 1 dan saya ingin batasnya sampai nilai 25% maka `limits = c(0, 0.25)`. Saya pilih 25% hanya agar semua _text_ dari masing-masing bar tidak ada yang terpotong.
+
+```{r}
+# Add label & y-limit 
+ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatality_rate)) + 
+  geom_bar(stat = "identity", fill = "coral", alpha = 0.7) + 
+  labs(title = "Top Fatality Rate Countries",
+       x = "Country",
+       y = "Fatality Rate") +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0, 0.25)) +
+  coord_flip() +
+  theme_minimal() + 
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank()) + 
+  geom_text(aes(label = paste0(fatality_rate*100, "%")), size = 3, hjust = -0.1)
+```
+
+Kita juga bisa membuat visualisasi seperti di atas berdasarkan banyaknya kasus yang terjadi di suatu negara.
+
+```{r}
+# By Total Cases 
+## top 20 barchart
+top20 <- world_covid %>% 
+  arrange(desc(total_cases)) %>%
+  head(n = 20)
+
+ggplot(data = top20, mapping = aes(x = reorder(country, total_cases), y = total_cases)) + 
+  geom_bar(stat = "identity", fill = "coral", alpha = 0.7) +
+  geom_text(aes(label = formatC(total_cases, big.mark = ",", decimal.mark = ".", format = "d")), size = 3, hjust = -0.1) + 
+  coord_flip() + 
+  labs(title = "Top 20 Total Cases Countries",
+       x = "Country",
+       y = "Total Cases") +
+  theme_minimal() + 
+  scale_y_continuous(labels = scales::number_format(big.mark = ","), limits = c(0, 2.0*10^6)) +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+```
+
+# Median Population Age vs Fatality Rate
+
+Pada visualisasi kedua ini kita akan melakukan eksplorasi data `world_covid` menggunakan beberapa variable dengan visualisasi berupa bubble chart seperti berikut ini.
+
+```{r echo=FALSE}
+# Buble chart 
+ggplot(data = world_covid, mapping = aes(x = med_age, y = fatality_rate)) + 
+  geom_point(aes(size = density_km2, color = continent), alpha = 0.6) +
+  theme_minimal() +
+  labs(title = "Median Population Age vs Fatality Rate",
+       x = "Median Population Age",
+       y = "Fatality Rate",
+       size = "Population Density (/km2)",
+       color = "Continent") +
+  scale_colour_manual(values = c("Africa" = "#f53d3d", 
+                                 "Asia" = "#f7a41e", 
+                                 "Australia/Oceania" = "#4bdb57", 
+                                 "Europe" = "#3da2eb", 
+                                 "North America" = "#f227eb", 
+                                 "South America" = "#8a0404")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  facet_wrap(~ continent)
+```
+
+Untuk membuat bubble chart di ggplot2 kita dapat menggunakan `geom_point()`. Dasarnya adalah membuat _scatter plot_ dengan `geom_point()` kemudian ukuran titiknya disesuaikan dengan nilai masing-masing. Untuk membuat _scatter plot_ dibutuhkan dua variable numerik untuk menentukan koordinat x (horizontal) dan y (vertikal). Pada kasus ini kita akan menggunakan variable `med_age` yang merupakan median usia dari seluruh populasi penduduk di suatu negara sebagai sumbu x, dan variable `fatality_rate` sebagai sumbu y.
+
+```{r}
+# Scatter plot
+ggplot(data = world_covid, mapping = aes(x = med_age, y = fatality_rate)) + 
+  geom_point() +
+  theme_minimal() 
+```
+
+Belum banyak informasi yang bisa kita peroleh dari visualisasi tersebut kecuali satu titik yang berada paling atas yang jauh dari titik yang lain. 
+
+Kita atur tingkat transparansi dari masing-masing titik tersebut agar dapat terlihat apakah ada titik yang bertumpuk dengan `alpha = 0.3`.
+
+```{r}
+# Point opacity
+ggplot(data = world_covid, mapping = aes(x = med_age, y = fatality_rate)) + 
+  geom_point(alpha = 0.3) +
+  theme_minimal() 
+```
+
+Ternyata ada beberapa negara yang nilai `med_age` dan `fatality_rate`-nya hampir sama. Terlihat dari adanya titik yang lebih tebal warnanya dibanding titik lain karena titiknya bertumpuk.
+
+Berikutnya kita atur ukuran dari masing-masing titik sesuai dengan nilai kepadatan penduduk per Km^2 pada negara tersebut, yaitu variable `denisty_km2`. Karena nilai yang akan kita gunakan adalah sebuah variable maka kita harus menuliskannya dalam sebuah mapping `aes()`.
+
+```{r}
+# Bubble chart size
+ggplot(data = world_covid, mapping = aes(x = med_age, y = fatality_rate)) + 
+  geom_point(aes(size = density_km2), alpha = 0.3) +
+  theme_minimal()
+```
+
+Kita juga bisa menyesuaikan warna masing-masing titik berdasarkan _Continent_-nya dengan menambahkan `color = continent` pada `aes()`.
+
+```{r}
+# Buble chart color
+ggplot(data = world_covid, mapping = aes(x = med_age, y = fatality_rate)) + 
+  geom_point(aes(size = density_km2, color = continent), alpha = 0.3) +
+  theme_minimal()
+```
+
+Karena Continent Europe dan North America mempunyai koordinat yang berdekatan dan warna yang hampir sama sehingga agak sulit membedakan continent tersebut. Kita dapat atur sendiri warna untuk masing-masing continent dengan fungsi `scale_color_manual()` atau `scale_colour_manual()`.  
+
+```{r}
+# Custom color manual
+ggplot(data = world_covid, mapping = aes(x = med_age, y = fatality_rate)) + 
+  geom_point(aes(size = density_km2, color = continent), alpha = 0.3) +
+  theme_minimal() +
+  scale_colour_manual(values = c("Africa" = "#f53d3d", 
+                                 "Asia" = "#f7a41e", 
+                                 "Australia/Oceania" = "#4bdb57", 
+                                 "Europe" = "#3da2eb", 
+                                 "North America" = "#f227eb", 
+                                 "South America" = "#8a0404"))
+```
+
+Tambahkan judul utama, judul sumbu. Ganti juga judul legend. Kita bisa lakukan hal ini dengan menggunakan fungsi `labs()`.
+
+```{r}
+# Custom title & axis title
+ggplot(data = world_covid, mapping = aes(x = med_age, y = fatality_rate)) + 
+  geom_point(aes(size = density_km2, color = continent), alpha = 0.3) +
+  theme_minimal() +
+  scale_colour_manual(values = c("Africa" = "#f53d3d", 
+                                 "Asia" = "#f7a41e", 
+                                 "Australia/Oceania" = "#4bdb57", 
+                                 "Europe" = "#3da2eb", 
+                                 "North America" = "#f227eb", 
+                                 "South America" = "#8a0404")) +
+  labs(title = "Median Population Age vs Fatality Rate",
+       x = "Median Population Age",
+       y = "Fatality Rate",
+       size = "Population Density (/km2)",
+       color = "Continent")
+```
+
+Ganti format judul pada sumbu _Fatality Rate_ menjadi persentase. Gunakan fungsi `scale_y_continuous()` seperti pada chart sebelumnya.
+
+```{r}
+# Buble chart custom axis title
+ggplot(data = world_covid, mapping = aes(x = med_age, y = fatality_rate)) + 
+  geom_point(aes(size = density_km2, color = continent), alpha = 0.3) +
+  theme_minimal() +
+  labs(title = "Median Population Age vs Fatality Rate",
+       x = "Median Population Age",
+       y = "Fatality Rate",
+       size = "Population Density (/km2)",
+       color = "Continent") +
+  scale_colour_manual(values = c("Africa" = "#f53d3d", 
+                                 "Asia" = "#f7a41e", 
+                                 "Australia/Oceania" = "#4bdb57", 
+                                 "Europe" = "#3da2eb", 
+                                 "North America" = "#f227eb", 
+                                 "South America" = "#8a0404")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1))
+```
+
+Jika visualisasi di atas masih dirasa sulit untuk memisahkan antar continent maka Anda dapat menggunakan fungsi `facet_wrap( ~ continent)`.
+
+```{r}
+# Buble chart custom axis title
+ggplot(data = world_covid, mapping = aes(x = med_age, y = fatality_rate)) + 
+  geom_point(aes(size = density_km2, color = continent), alpha = 0.6) +
+  theme_minimal() +
+  labs(title = "Median Population Age vs Fatality Rate",
+       x = "Median Population Age",
+       y = "Fatality Rate",
+       size = "Population Density (/km2)",
+       color = "Continent") +
+  scale_colour_manual(values = c("Africa" = "#f53d3d", 
+                                 "Asia" = "#f7a41e", 
+                                 "Australia/Oceania" = "#4bdb57", 
+                                 "Europe" = "#3da2eb", 
+                                 "North America" = "#f227eb", 
+                                 "South America" = "#8a0404")) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
+  facet_wrap(~ continent)
+```
+
+
+# Indonesia Daily Cases Trend
+
+Terakhir, kita akan membuat chart yang dapat menunjukkan pola penambahan kasus harian di Indonesia. Data yang digunakan adalah data `dailynational` yg diolah dari sumber <https://bnpb-inacovid19.hub.arcgis.com/> melalui [API](https://services5.arcgis.com/VS6HdKS0VfIhv8Ct/arcgis/rest/services/Statistik_Perkembangan_COVID19_Indonesia/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json).
+
+Kita import kemudian lihat struktur dan beberapa baris pertama dari data tersebut.
+
+```{r}
+dailynational <- read.csv("data/dailynational.csv", header = TRUE, stringsAsFactors = FALSE)
+dailynational$dates <- as.Date(dailynational$dates)
+str(dailynational)
+```
+
+```{r}
+head(dailynational, n = 10)
+```
+
+Karena data yang dimiliki adalah laporan harian, terdapat tanggal, dan kita ingin mengetahui pola kasus harian, maka akan lebih tepat jika kita gunakan chart garis (_line chart_) yang biasa digunakan untuk visualisasi data deret waktu atau _time series_.
+
+Kita akan menampilkan kasus penambahan baru harian (`daily_cases`), sembuh harian (`daily_recovered`), menginggal harian (`daily_deaths`) dan sebuah trend untuk kasus penambahan baru harian pada _line chart_ tersebut seperti berikut ini.
+
+```{r echo=FALSE}
+ks <- ksmooth(x = dailynational$dates, 
+              y = dailynational$daily_cases, 
+              kernel = "normal", 
+              bandwidth = 10, 
+              x.points = dailynational$dates)
+dailynational$daily_trend <- ks$y
+
+ggplot(data = dailynational, mapping = aes(x = dates)) + 
+  geom_line(aes(y = daily_cases, color = "New"), size = 0.8) + 
+  geom_line(aes(y = daily_recovered, color = "Recovered"), size = 0.8) + 
+  geom_line(aes(y = daily_deaths, color = "Deaths"), size = 0.8) + 
+  theme_minimal() + 
+  scale_color_manual(name = "Cases",
+                     values = c("New" = "yellow", 
+                                "Recovered" = "green", 
+                                "Deaths" = "red", 
+                                "Trend" = "grey")) + 
+  labs(title = "Indonesia Daily Cases Trend",
+       x = "Dates",
+       y = "Daily Cases") + 
+  scale_x_date(date_breaks = "2 weeks", date_labels = "%d/%m") +
+  geom_line(aes(y = daily_trend, color = "Trend"), size = 0.8) + 
+  theme(legend.position = "top")
+```
+
+
+Yang perlu kita ingat adalah struktur data yang kita gunakan seperti berikut.
+
+```{r}
+dailynational %>% 
+  select(dates, daily_cases, daily_recovered, daily_deaths) %>% 
+  head(n = 10)
+```
+
+Dengan `ggplot2` kita akan membuat sebuah _line chart_ untuk masing-masing variable tersebut terhadap variable tanggal. Karena yang menjadi sumbu-x ( _horizontal_ ) adalah variable tanggal untuk semua variable kasus, maka `aes(x = dates)` dapat kita tuliskan satu kali saja di argumen `mapping` pada fungsi `ggplot()`, sedangkan masing-masing variable kasus kita tuliskan di masing-masing `geom_line()`.  
+
+```{r}
+ggplot(data = dailynational, mapping = aes(x = dates)) + 
+  geom_line(aes(y = daily_cases, color = "New")) + 
+  geom_line(aes(y = daily_recovered, color = "Recovered")) + 
+  geom_line(aes(y = daily_deaths, color = "Deaths")) +
+  theme_minimal()
+```
+
+Selanjutnya kita akan menyesuaikan warna untuk masing-masing kasus agar lebih cocok terhadap jenis kasusnya. Misalnya untuk kasus `New` kita gunakan warna kuning (`yellow`), `Recovered` dengan warna hijau (`green`), dan `Deaths` dengan warna merah (`red`). Tebalnya garis juga akan kita sesuaikan sehingga lebih tebal.
+
+```{r}
+# Change color & line size
+ggplot(data = dailynational, mapping = aes(x = dates)) + 
+  geom_line(aes(y = daily_cases, color = "New"), size = 0.8) + 
+  geom_line(aes(y = daily_recovered, color = "Recovered"), size = 0.8) + 
+  geom_line(aes(y = daily_deaths, color = "Deaths"), size = 0.8) +
+  theme_minimal() + 
+  scale_color_manual(name = "Cases", # judul legend
+                     values = c("New" = "yellow", 
+                                "Recovered" = "green", 
+                                "Deaths" = "red"))
+```
+
+
+Agar visualisasinya lebih baik selanjutnya kita tambahkan judul chart dan judul masing-masing sumbu.
+
+```{r}
+# Add title and axis title
+ggplot(data = dailynational, mapping = aes(x = dates)) + 
+  geom_line(aes(y = daily_cases, color = "New"), size = 0.8) + 
+  geom_line(aes(y = daily_recovered, color = "Recovered"), size = 0.8) + 
+  geom_line(aes(y = daily_deaths, color = "Deaths"), size = 0.8) +
+  theme_minimal() + 
+  scale_color_manual(name = "Cases", # judul legend
+                     values = c("New" = "yellow", 
+                                "Recovered" = "green", 
+                                "Deaths" = "red")) + 
+  labs(title = "Indonesia Daily Cases Trend",
+       x = "Dates",
+       y = "Daily Cases")
+```
+
+Berikutnya kita rubah format label pada sumbu x (Dates) agar kita bisa mengetahui tanggalnya. Format yang akan digunakan adalah "dd/mm" karena tahunnya sama, yaitu 2020, maka tidak perlu ditampilkan. Karena nilai pada sumbu x adalah tanggal, maka kita dapat gunakan fungsi `scale_x_date()`. Kemudian argumen `date_breaks = "2 weeks"` artinya antar tanggal yang ditampilkan (_major ticks_) berjarak 2 minggu, sehingga _minor ticks_ adalah 1 minggu.
+
+```{r}
+# Change x-axis format
+ggplot(data = dailynational, mapping = aes(x = dates)) + 
+  geom_line(aes(y = daily_cases, color = "New"), size = 0.8) + 
+  geom_line(aes(y = daily_recovered, color = "Recovered"), size = 0.8) + 
+  geom_line(aes(y = daily_deaths, color = "Deaths"), size = 0.8) +
+  theme_minimal() + 
+  scale_color_manual(name = "Cases", # judul legend
+                     values = c("New" = "yellow", 
+                                "Recovered" = "green", 
+                                "Deaths" = "red")) + 
+  labs(title = "Indonesia Daily Cases Trend",
+       x = "Dates",
+       y = "Daily Cases") + 
+  scale_x_date(date_breaks = "2 weeks", date_labels = "%d/%m")
+```
+
+
+Selanjutnya kita akan menambahkan sebuah garis trend pada chart di atas yang menunjukkan pola penambahan kasus baru harian di Indonesia. Yang kita butuhkan adalah data tanggal (`dates`) dan jumlah kasus penambahan harian (`daily_cases`). Untuk membuat data trend-nya kita gunakan _Kernel Smoothing_ dengan fungsi `ksmooth` dari package {stats} yang sudah menjadi bagian dari base R ketika kita install R. Tidak ada alasan khusus yang saya gunakan sebagai pedoman ketika memilih fungsi ini. Ada beberapa metode lain yang dapat digunakan untuk membuat trend seperti yang ditulis di [artikel ini](https://www.displayr.com/smoothing-time-series-data/?utm_medium=Feed&utm_source=Syndication).
+
+```{r}
+# Add trend line
+ks <- ksmooth(x = dailynational$dates, 
+              y = dailynational$daily_cases, 
+              kernel = "normal", 
+              bandwidth = 10, 
+              x.points = dailynational$dates)
+dailynational$daily_trend <- ks$y
+```
+
+Kita tambahkan data trend tersebut menggunakan `geom_line()`.
+
+```{r}
+ggplot(data = dailynational, mapping = aes(x = dates)) + 
+  geom_line(aes(y = daily_cases, color = "New"), size = 0.8) + 
+  geom_line(aes(y = daily_recovered, color = "Recovered"), size = 0.8) + 
+  geom_line(aes(y = daily_deaths, color = "Deaths"), size = 0.8) +
+  theme_minimal() + 
+  scale_color_manual(name = "Cases",
+                     values = c("New" = "yellow", 
+                                "Recovered" = "green", 
+                                "Deaths" = "red", 
+                                "Trend" = "grey")) + 
+  labs(title = "Indonesia Daily Cases Trend",
+       x = "Dates",
+       y = "Daily Cases") + 
+  scale_x_date(date_breaks = "2 weeks", date_labels = "%d/%m") + 
+  geom_line(aes(y = daily_trend, color = "Trend"), size = 0.8)
+
+```
+
+Untuk visualisasi ini saya pribadi lebih suka jika legend-nya diletakan di atas chart. Karena itu saya tambahkan fungsi `theme(legend.position = "top")`.
+
+```{r}
+# Custom legend & position
+ggplot(data = dailynational, mapping = aes(x = dates)) + 
+  geom_line(aes(y = daily_cases, color = "New"), size = 0.8) + 
+  geom_line(aes(y = daily_recovered, color = "Recovered"), size = 0.8) + 
+  geom_line(aes(y = daily_deaths, color = "Deaths"), size = 0.8) + 
+  theme_minimal() + 
+  scale_color_manual(name = "Cases",
+                     values = c("New" = "yellow", 
+                                "Recovered" = "green", 
+                                "Deaths" = "red", 
+                                "Trend" = "grey")) + 
+  labs(title = "Indonesia Daily Cases Trend",
+       x = "Dates",
+       y = "Daily Cases") + 
+  scale_x_date(date_breaks = "2 weeks", date_labels = "%d/%m") +
+  geom_line(aes(y = daily_trend, color = "Trend"), size = 0.8) + 
+  theme(legend.position = "top")
+
+```
+
+

@@ -27,7 +27,8 @@ dailynational <- fromJSON("https://services5.arcgis.com/VS6HdKS0VfIhv8Ct/arcgis/
          DailyNewSpecimen = Kasus_Diperiksa_Spesimen_Baru_Harian
   ) %>% 
   clean_names() %>% 
-  select(dates:odp)
+  select(dates:odp) %>% 
+  arrange(dates)
 
 write.csv(dailynational, "data/dailynational.csv", na = "", row.names = FALSE)
 
