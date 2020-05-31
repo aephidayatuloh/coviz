@@ -133,7 +133,7 @@ world_covid %>%
        x = "Country",
        y = "Fatality Rate") +
   theme_minimal() + 
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0, 0.25)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0, 0.30)) +
   theme(panel.grid.major.y = element_blank(),
         panel.grid.minor.y = element_blank(),
         panel.grid.minor.x = element_blank())

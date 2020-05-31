@@ -1,2 +1,2 @@
-# coviz
-Visualisasi Data Menggunakan R (studi kasus Data Covid-19)
+# Visualisasi Data Menggunakan R (Studi Kasus Data Covid-19)
+
