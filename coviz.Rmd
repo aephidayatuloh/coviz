@@ -320,7 +320,7 @@ ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatal
 
 ```
 
-Seperti yang dilihat, ada _text_ yang terpotong karena sumbu _Fatality Rate_ yang kurang panjang. Kita dapat mengatur batas (limits) dari sumbu _Fatality Rate_ ini dengan menambahkan argumen `limits = c(<min>, <max>)` pada fungsi `scale_y_continuous()`. Nilai `<min>` dan `<max>` adalah pangkal dan batas ujung sumbu. Karena nilai `fatality_rate` antara 0 dan 1 dan saya ingin batasnya sampai nilai 25% maka `limits = c(0, 0.25)`. Saya pilih 25% hanya agar semua _text_ dari masing-masing bar tidak ada yang terpotong.
+Seperti yang dilihat, ada _text_ yang terpotong karena sumbu _Fatality Rate_ yang kurang panjang. Kita dapat mengatur batas (limits) dari sumbu _Fatality Rate_ ini dengan menambahkan argumen `limits = c(<min>, <max>)` pada fungsi `scale_y_continuous()`. Nilai `<min>` dan `<max>` adalah pangkal dan batas ujung sumbu. Karena nilai `fatality_rate` antara 0 dan 1 dan saya ingin batasnya sampai nilai 30% maka `limits = c(0, 0.30)`. Saya pilih 30% hanya agar semua _text_ dari masing-masing bar tidak ada yang terpotong.
 
 ```{r}
 # Add label & y-limit 
@@ -329,7 +329,7 @@ ggplot(data = topn, mapping = aes(x = reorder(country, fatality_rate), y = fatal
   labs(title = "Top Fatality Rate Countries",
        x = "Country",
        y = "Fatality Rate") +
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0, 0.25)) +
+  scale_y_continuous(labels = scales::percent_format(accuracy = 1), limits = c(0, 0.30)) +
   coord_flip() +
   theme_minimal() + 
   theme(panel.grid.major.y = element_blank(),
@@ -548,6 +548,7 @@ ggplot(data = dailynational, mapping = aes(x = dates)) +
   scale_x_date(date_breaks = "2 weeks", date_labels = "%d/%m") +
   geom_line(aes(y = daily_trend, color = "Trend"), size = 0.8) + 
   theme(legend.position = "top")
+dailynational$daily_trend <- NULL
 ```
 
 
