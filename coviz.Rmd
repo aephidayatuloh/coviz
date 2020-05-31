@@ -105,7 +105,7 @@ Pertama, kita siapkan data yang akan digunakan dengan cara import data dari file
 Kemudian kita lihat struktur dari dataframe (banyaknya observasi dan variable, nama variable dan tipenya) yang sudah diimport dengan fungsi `str()`. Data `world_covid` adalah data mengenai banyaknya kasus covid di setiap negara/negara bagian dan populasi penduduknya yang diambil dari <https://www.worldometers.info/coronavirus> dan <https://www.worldometers.info/world-population>.
 
 ```{r}
-world_covid <- read.csv(file = "data/world_covid.csv", header = TRUE, stringsAsFactors = FALSE)
+world_covid <- read.csv(file = "data/world_covid.csv", header = TRUE, stringsAsFactors = FALSE, fileEncoding = "latin1")
 str(world_covid)
 ```
 
