@@ -1,14 +1,6 @@
-# usulku isinya:
-# 1. bar chart: Fatalyty rate di berbagai negara (v)
-# 2. scatter plot: Hubungan antara jumlah kasus dengan kepadatan penduduk + Bubble Chart
-# 3. trend/time series plot: banyaknya kejadian dari waktu ke waktu
-
-
-
 library(rvest)
 library(dplyr)
 library(tidyr)
-library(readr)
 library(lubridate)
 library(jsonlite)
 library(janitor)
@@ -34,9 +26,10 @@ dailynational <- fromJSON("https://services5.arcgis.com/VS6HdKS0VfIhv8Ct/arcgis/
          Negative = Jumlah_Negatif,
          DailyNewSpecimen = Kasus_Diperiksa_Spesimen_Baru_Harian
   ) %>% 
-  clean_names()
+  clean_names() %>% 
+  select(dates:odp)
 
-write_csv(dailynational, "data/dailynational.csv")
+write.csv(dailynational, "data/dailynational.csv", na = "", row.names = FALSE)
 
 world_covid <- read_html("https://www.worldometers.info/coronavirus/") %>%
   html_table() %>%
@@ -58,7 +51,11 @@ world_covid <- read_html("https://www.worldometers.info/coronavirus/") %>%
 world_population <- read_html("https://www.worldometers.info/world-population/") %>% 
   html_table(dec = ".") %>% 
   .[[5]] %>% 
-  clean_names() %>% 
+  clean_names() 
+
+names(world_population)[6:7] <- c("density_km2", 'land_area_km2')
+
+world_population <- world_population %>% 
   mutate(country_or_dependency = case_when(country_or_dependency == "Czech Republic (Czechia)" ~ "Czechia",
                                            country_or_dependency == "United Arab Emirates" ~ "UAE",
                                            country_or_dependency == "St. Vincent & Grenadines" ~ "St. Vincent Grenadines",
@@ -71,15 +68,25 @@ world_population <- read_html("https://www.worldometers.info/world-population/")
                                            country_or_dependency == "South Korea" ~ "S. Korea",
                                            country_or_dependency == "Sao Tome & Principe" ~ "Sao Tome and Principe",
                                            TRUE ~ as.character(country_or_dependency)),
+         population_2020 = as.numeric(gsub(",", "", population_2020)),
+         net_change = as.numeric(gsub(",", "", net_change)),
+         density_km2 = as.numeric(gsub(",", "", density_km2)),
+         land_area_km2 = as.numeric(gsub(",", "", land_area_km2)),
+         migrants_net = as.numeric(gsub(",", "", migrants_net)),
          yearly_change = as.numeric(gsub(" %", "", yearly_change))/100,
          fert_rate = as.numeric(fert_rate),
          med_age = as.numeric(med_age),
          urban_pop_percent = as.numeric(gsub(" %", "", urban_pop_percent))/100,
          world_share = as.numeric(gsub(" %", "", world_share))/100) %>% 
-  .[,-1]
-names(world_population)[5:6] <- c("density_km2", 'land_area_km2')
+  select(-1)
+# 
+# world_coord <- read_html("https://developers.google.com/public-data/docs/canonical/countries_csv") %>% 
+#   html_table() %>% 
+#   .[[1]] %>% 
+#   filter(!is.na(latitude) & !is.na(longitude))
+# # write_csv(world_coord, "data/world_coord.csv")
 
 world_covid %>% 
   left_join(world_population, by = c("country" = "country_or_dependency")) %>% 
   filter(!is.na(population_2020)) %>% 
-  write_csv("data/world_covid.csv", na = "")
+  write.csv("data/world_covid.csv", na = "", row.names = FALSE)
