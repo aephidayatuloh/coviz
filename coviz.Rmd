@@ -76,13 +76,13 @@ Beberapa hal yang dibutuhkan pada kesempatan ini :
 
 **Program R dan RStudio**, diharapkan minimal R dengan versi 3.6.2 dan beberapa package yang dibutuhkan.
 
-Anda dapat memperoleh materi workshop ini (data, script dan file Rmd) di repository <https://github.com/aephidayatuloh/coviz>.  
+Anda dapat memperoleh materi workshop ini (data, script dan file Rmd) di <a href="https://github.com/aephidayatuloh/coviz" target="_blank">repository github</a>.  
 
 * Pilih **Clone or download**  
 * Kemudian pilih **Download ZIP**.  
 * Setelah selesai download, ekstrak file zip tersebut dan _double-click_ file `coviz.Rproj`.
 
-Atau Anda juga dapat mengakses project tersebut yang sudah tersedia di RStudio Cloud <https://rstudio.cloud/project/1333221>. Anda perlu login atau membuat akun terlebih dahulu jika belum mempunyai akun RStudio Cloud. Semua materi dan package yang akan digunakan sudah tersedia.
+Atau Anda juga dapat mengakses project tersebut yang sudah tersedia di RStudio Cloud <a href="https://rstudio.cloud/project/1333221">https://rstudio.cloud/project/1333221</a>. Anda perlu login atau membuat akun terlebih dahulu jika belum mempunyai akun RStudio Cloud. Semua materi dan package yang akan digunakan sudah tersedia.
 
 Jika Anda ingin memperbarui data yang sudah disediakan, Anda dapat membuka dan menjalankan script pada file "get_raw_data.R" di dalam folder script. Tentu saja Anda perlu install terlebih dahulu package yang digunakan jika Anda belum mempunyai package tersebut pada library R Anda.
 
